@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Watki &middot; {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Watki na forum</h1>
+    <p class="muted">Zadaj pytanie grupie albo odpowiedz na watek, ktory juz ktos zaczal.</p>
+  </div>
+  {% if current_user %}
+    <a class="btn btn-primary" href="/threads/new">Zaloz watek</a>
+  {% endif %}
+</section>
+
+{% if threads %}
+  <ul class="thread-list">
+    {% for thread, replies in threads %}
+      <li class="thread-item">
+        <a class="thread-title" href="/threads/{{ thread.id }}">{{ thread.title }}</a>
+        <p class="thread-meta">
+          <span>{{ thread.author.username }}</span>
+          <span aria-hidden="true">&middot;</span>
+          <span>{{ thread.created_at|dt }}</span>
+          <span aria-hidden="true">&middot;</span>
+          <span>{{ replies }} {% if replies == 1 %}wpis{% else %}wpisow{% endif %}</span>
+        </p>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <div class="empty">
+    <h2>Forum jest jeszcze puste</h2>
+    <p class="muted">
+      {% if current_user %}
+        Zaloz pierwszy watek i zacznij dyskusje.
+      {% else %}
+        Zaloguj sie lub zaloz konto, aby dodac pierwszy watek.
+      {% endif %}
+    </p>
+    {% if current_user %}
+      <a class="btn btn-primary" href="/threads/new">Zaloz pierwszy watek</a>
+    {% else %}
+      <a class="btn btn-primary" href="/register">Zaloz konto</a>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}

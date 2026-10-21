@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Moje sesje &middot; {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Aktywne sesje</h1>
+    <p class="muted">
+      Sesje trzymane sa po stronie serwera. Limit bezczynnosci: {{ idle_timeout }} min,
+      maksymalny czas zycia: {{ (absolute_ttl / 60)|round(1) }} h.
+    </p>
+  </div>
+  {% if sessions|length > 1 %}
+    <form method="post" action="/account/sessions/revoke-others" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn btn-danger" type="submit">Wyloguj pozostale urzadzenia</button>
+    </form>
+  {% endif %}
+</section>
+
+<div class="table-scroll">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Urzadzenie / przegladarka</th>
+        <th>Adres IP</th>
+        <th>Zalogowano</th>
+        <th>Ostatnia aktywnosc</th>
+        <th>Wygasa</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in sessions %}
+        <tr>
+          <td>
+            <span class="ua">{{ s.user_agent or "nieznane" }}</span>
+            {% if s.id == current_session_id %}<span class="badge">ta sesja</span>{% endif %}
+          </td>
+          <td>{{ s.ip_address or "-" }}</td>
+          <td>{{ s.created_at|dt }}</td>
+          <td>{{ s.last_seen_at|dt }}</td>
+          <td>{{ s.expires_at|dt }}</td>
+          <td>
+            <form method="post" action="/account/sessions/{{ s.id }}/revoke" class="inline-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn btn-ghost btn-small" type="submit">Uniewaznij</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

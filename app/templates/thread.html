@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ thread.title }} &middot; {{ app_name }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb"><a href="/">&larr; Wszystkie watki</a></nav>
+
+<article class="card">
+  <h1>{{ thread.title }}</h1>
+  <p class="thread-meta">
+    <span>zalozyl: {{ thread.author.username }}</span>
+    <span aria-hidden="true">&middot;</span>
+    <span>{{ thread.created_at|dt }}</span>
+  </p>
+</article>
+
+<section class="posts">
+  {% for post in thread.posts %}
+    <article class="post" {% if loop.last %}id="ostatni"{% endif %}>
+      <header class="post-head">
+        <span class="avatar">{{ post.author.username[0]|upper }}</span>
+        <div>
+          <strong>{{ post.author.username }}</strong>
+          <span class="muted small">{{ post.created_at|dt }}</span>
+        </div>
+      </header>
+      <p class="post-body">{{ post.body }}</p>
+    </article>
+  {% endfor %}
+</section>
+
+{% if current_user %}
+  <form class="card" method="post" action="/threads/{{ thread.id }}/posts">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="body">Twoja odpowiedz</label>
+    <textarea id="body" name="body" rows="4" maxlength="2000" required
+              placeholder="Napisz, co o tym sadzisz...">{{ form.body if form else "" }}</textarea>
+    <button class="btn btn-primary" type="submit">Dodaj odpowiedz</button>
+  </form>
+{% else %}
+  <div class="card center">
+    <p class="muted">Aby odpowiedziec w watku, musisz byc zalogowany.</p>
+    <a class="btn btn-primary" href="/login">Zaloguj sie</a>
+  </div>
+{% endif %}
+{% endblock %}

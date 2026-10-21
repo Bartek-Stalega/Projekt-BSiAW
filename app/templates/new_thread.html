@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Nowy watek &middot; {{ app_name }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb"><a href="/">&larr; Wszystkie watki</a></nav>
+
+<section class="card">
+  <h1>Nowy watek</h1>
+  <form method="post" action="/threads/new">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="title">Tytul</label>
+    <input id="title" name="title" type="text" required minlength="5" maxlength="120"
+           placeholder="O czym chcesz podyskutowac?" value="{{ form.title if form else '' }}">
+
+    <label for="body">Pierwszy wpis</label>
+    <textarea id="body" name="body" rows="6" required minlength="5" maxlength="2000"
+              placeholder="Opisz temat watku...">{{ form.body if form else '' }}</textarea>
+
+    <button class="btn btn-primary" type="submit">Opublikuj watek</button>
+  </form>
+</section>
+{% endblock %}

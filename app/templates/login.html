@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Logowanie &middot; {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+  <h1>Logowanie</h1>
+  <p class="muted">Podaj dane konta, aby pisac na forum.</p>
+  <form method="post" action="/login" autocomplete="on">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="username">Nazwa uzytkownika</label>
+    <input id="username" name="username" type="text" required maxlength="32"
+           autocomplete="username" value="{{ form.username if form else '' }}">
+
+    <label for="password">Haslo</label>
+    <input id="password" name="password" type="password" required maxlength="128"
+           autocomplete="current-password">
+
+    <button class="btn btn-primary btn-block" type="submit">Zaloguj sie</button>
+  </form>
+  <p class="muted small">Nie masz konta? <a href="/register">Zaloz konto</a></p>
+</section>
+{% endblock %}

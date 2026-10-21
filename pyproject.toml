@@ -1,0 +1,25 @@
+[project]
+name = "secforum"
+version = "0.1.0"
+description = "Forum grupy projektowej - projekt laboratoryjny BSiAW (grupa 4)"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "S", "C4"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+# Hasla w testach i w danych demonstracyjnych sa jawne z zalozenia.
+"tests/*" = ["S105", "S106", "S107"]
+"scripts/*" = ["S105", "S106", "T201"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "data"]

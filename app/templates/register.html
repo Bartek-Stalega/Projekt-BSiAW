@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Rejestracja &middot; {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="auth-card">
+  <h1>Zaloz konto</h1>
+  <p class="muted">Haslo musi miec minimum 10 znakow. Przechowujemy wylacznie jego hasz (Argon2id).</p>
+  <form method="post" action="/register">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label for="username">Nazwa uzytkownika</label>
+    <input id="username" name="username" type="text" required minlength="3" maxlength="32"
+           pattern="[A-Za-z0-9_.\-]{3,32}" autocomplete="username"
+           value="{{ form.username if form else '' }}">
+
+    <label for="email">E-mail</label>
+    <input id="email" name="email" type="email" required maxlength="255"
+           autocomplete="email" value="{{ form.email if form else '' }}">
+
+    <label for="password">Haslo</label>
+    <input id="password" name="password" type="password" required minlength="10" maxlength="128"
+           autocomplete="new-password">
+
+    <label for="password_confirm">Powtorz haslo</label>
+    <input id="password_confirm" name="password_confirm" type="password" required
+           minlength="10" maxlength="128" autocomplete="new-password">
+
+    <button class="btn btn-primary btn-block" type="submit">Zaloz konto</button>
+  </form>
+  <p class="muted small">Masz juz konto? <a href="/login">Zaloguj sie</a></p>
+</section>
+{% endblock %}

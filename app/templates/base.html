@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="/">
+        <span class="brand-mark">SF</span>
+        <span>
+          <strong>{{ app_name }}</strong>
+          <small>forum grupy projektowej</small>
+        </span>
+      </a>
+      <nav class="nav">
+        {% if current_user %}
+          <a href="/threads/new" class="btn btn-primary">Nowy watek</a>
+          <a href="/account/sessions" class="nav-link">Moje sesje</a>
+          <span class="nav-user" title="Zalogowany uzytkownik">{{ current_user.username }}</span>
+          <form method="post" action="/logout" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn btn-ghost">Wyloguj</button>
+          </form>
+        {% else %}
+          <a href="/login" class="nav-link">Logowanie</a>
+          <a href="/register" class="btn btn-primary">Zaloz konto</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap main">
+    {% if flash %}
+      <div class="alert alert-{{ flash[0] }}">{{ flash[1] }}</div>
+    {% endif %}
+    {% if error %}
+      <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="wrap footer">
+    <span>{{ app_name }} v{{ app_version }} &middot; srodowisko: {{ environment }}</span>
+    <span>Projekt laboratoryjny BSiAW, grupa 4</span>
+  </footer>
+</body>
+</html>

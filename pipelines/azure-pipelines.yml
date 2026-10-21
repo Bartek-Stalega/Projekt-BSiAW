@@ -1,0 +1,105 @@
+# Szkielet pipeline'u Azure DevOps.
+# L1-L2: dziala czesc CI (lint, testy, build obrazu) - mozna ja uruchomic
+#        bez zadnych zasobow w chmurze.
+# L5:    dojdzie stage Deploy (push do ACR + wdrozenie srodowiska).
+# L6:    dojda bramki bezpieczenstwa (SAST/DAST, skan obrazu, sekrety z Key Vault).
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - docs/**
+      - "*.md"
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  pythonVersion: "3.12"
+  imageName: "secforum"
+
+stages:
+  - stage: Quality
+    displayName: Jakosc kodu i testy
+    jobs:
+      - job: lint_and_test
+        displayName: Lint + testy jednostkowe
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(pythonVersion)
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements-dev.txt
+            displayName: Instalacja zaleznosci
+
+          - script: ruff check app tests scripts
+            displayName: Ruff (lint)
+
+          - script: pytest --junitxml=test-results.xml
+            displayName: Testy jednostkowe
+            env:
+              APP_ENVIRONMENT: test
+              APP_SECRET_KEY: $(TEST_SECRET_KEY)
+
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFiles: test-results.xml
+              testRunTitle: SecForum unit tests
+
+  - stage: Security
+    displayName: Bramki bezpieczenstwa (rozwijane w L6)
+    dependsOn: Quality
+    jobs:
+      - job: sast
+        displayName: SAST i skan zaleznosci
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(pythonVersion)
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements-dev.txt
+            displayName: Instalacja zaleznosci
+
+          - script: bandit -q -c pyproject.toml -r app scripts
+            displayName: Bandit (SAST)
+
+          - script: pip-audit -r requirements.txt
+            displayName: pip-audit (podatnosci w zaleznosciach)
+            continueOnError: true
+
+  - stage: Build
+    displayName: Budowa obrazu kontenera
+    dependsOn: Security
+    jobs:
+      - job: docker_build
+        displayName: docker build
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - script: docker build -t $(imageName):$(Build.BuildId) .
+            displayName: Build obrazu
+
+          # L6: skan obrazu przed wypchnieciem do rejestru.
+          # - script: trivy image --exit-code 1 --severity HIGH,CRITICAL $(imageName):$(Build.BuildId)
+          #   displayName: Trivy (skan obrazu)
+
+          # L5: publikacja do Azure Container Registry.
+          # - task: Docker@2
+          #   inputs:
+          #     containerRegistry: 'acr-secforum'
+          #     repository: '$(imageName)'
+          #     command: 'push'
+          #     tags: '$(Build.BuildId)'
