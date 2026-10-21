@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 
 from sqlalchemy import select, update
@@ -8,6 +9,7 @@ from app.models import User, UserSession, utcnow
 from app.security import generate_token, hash_token
 
 settings = get_settings()
+logger = logging.getLogger("secforum.sessions")
 
 
 def create_session(
@@ -55,6 +57,9 @@ def revoke_session(db: DbSession, record: UserSession, reason: str = "logout") -
     if record.revoked_at is None:
         record.revoked_at = utcnow()
         db.commit()
+        logger.info(
+            "session_revoked session_id=%s user_id=%s reason=%s", record.id, record.user_id, reason
+        )
 
 
 def revoke_other_sessions(db: DbSession, user_id: int, keep_session_id: int) -> int:
