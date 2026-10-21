@@ -14,7 +14,7 @@
 
 {% if threads %}
   <ul class="thread-list">
-    {% for thread, replies in threads %}
+    {% for thread in threads %}
       <li class="thread-item">
         <a class="thread-title" href="/threads/{{ thread.id }}">{{ thread.title }}</a>
         <p class="thread-meta">
@@ -22,7 +22,7 @@
           <span aria-hidden="true">&middot;</span>
           <span>{{ thread.created_at|dt }}</span>
           <span aria-hidden="true">&middot;</span>
-          <span>{{ replies }} {% if replies == 1 %}wpis{% else %}wpisow{% endif %}</span>
+          <span>{{ thread.posts|length }} {% if thread.posts|length == 1 %}wpis{% else %}wpisow{% endif %}</span>
         </p>
       </li>
     {% endfor %}

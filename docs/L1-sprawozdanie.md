@@ -1,73 +1,73 @@
 # Sprawozdanie L1 - Wybor aplikacji do implementacji
 
-**Przedmiot:** Bezpieczenstwo serwerow i aplikacji Web - laboratoria, grupa 4
+**Przedmiot:** Bezpieczenstwo serwerow i aplikacji Web, grupa 4
 **Data laboratorium:** 2026-10-22
-**Temat:** L1. Wybor aplikacji i implementacja
 
 ## 1. Wybrana aplikacja
 
-**SecForum** - proste forum dyskusyjne grupy projektowej. Zalogowany uzytkownik
-zaklada watki i odpowiada w watkach zalozonych przez innych; tresci sa widoczne
-publicznie, ale pisac moga tylko uwierzytelnieni uzytkownicy.
+**SecForum** - proste forum dyskusyjne. Zalogowany uzytkownik zaklada watki
+i odpowiada w watkach innych osob; tresci czyta kazdy, pisze tylko osoba zalogowana.
 
-Zakres swiadomie ograniczony do jednej, kompletnej funkcjonalnosci - ciezar
-projektu lezy w warstwie bezpieczenstwa i infrastruktury, a nie w rozbudowie UI.
+Zakres celowo waski - trzy funkcje (konto, watek, odpowiedz). Rozbudowa UI nie wplywa
+na ocene, a ciezar projektu lezy w kolejnych laboratoriach (architektura, CI/CD,
+bezpieczenstwo, hardening, testy).
 
-## 2. Realizacja wymagan funkcjonalnych L1
+## 2. Realizacja wymagan L1
 
 | Wymaganie | Realizacja |
 | --- | --- |
-| Prosta strona web z logowaniem (sesja) | Rejestracja, logowanie, wylogowanie; sesja serwerowa w bazie, w ciasteczku `HttpOnly` wylacznie losowy token |
-| Interakcja z uzytkownikiem (forum/chat/komentarze) | Forum: lista watkow, zakladanie watku, odpowiedzi w watku |
-| Baza danych | PostgreSQL 16 (kontener); SQLite jako tryb awaryjny do szybkiego uruchomienia bez Dockera |
+| Prosta strona web z logowaniem (sesja) | rejestracja, logowanie, wylogowanie; sesja w podpisanym ciasteczku `HttpOnly` |
+| Interakcja z uzytkownikiem (forum/chat/komentarze) | forum: lista watkow, zakladanie watku, odpowiedzi |
+| Baza danych | PostgreSQL 16 w kontenerze (lokalnie mozna tez SQLite) |
 | Technologia znana grupie | Python 3.12 + FastAPI + Jinja2 + SQLAlchemy |
-| Cloud (GCP/AWS/**Azure**) | Azure + Azure DevOps - wybrane jako docelowe srodowisko (L3-L6) |
+| Srodowisko chmurowe | Azure + Azure DevOps (wdrozenie od L3/L4) |
 
-## 3. Stos technologiczny i uzasadnienie
+## 3. Stos technologiczny
 
-| Warstwa | Technologia | Uzasadnienie |
+| Warstwa | Technologia | Dlaczego |
 | --- | --- | --- |
-| Backend | Python 3.12, FastAPI | jezyk znany calej grupie, czytelny kod, wbudowana walidacja wejscia |
-| Widoki | Jinja2 (SSR), czysty CSS | autoescaping domyslnie wlaczony (ochrona przed XSS), brak zaleznosci frontendowych do audytu |
-| ORM / baza | SQLAlchemy 2.0, PostgreSQL 16 | zapytania parametryzowane (ochrona przed SQL injection), latwa migracja na Azure Database for PostgreSQL |
-| Hasla | Argon2id (`argon2-cffi`) | rekomendacja OWASP Password Storage Cheat Sheet |
-| Uruchomienie | Docker Compose: nginx + aplikacja + baza | odwzorowanie docelowej architektury chmurowej juz lokalnie |
-| CI/CD | Azure DevOps Pipelines | wymagane srodowisko; szkielet pipeline'u w repozytorium |
+| Backend | Python 3.12, FastAPI | jezyk znany grupie, malo kodu na prosty serwis |
+| Widoki | Jinja2 (renderowanie po stronie serwera), CSS | brak budowania frontendu, mniej ruchomych czesci |
+| Baza | SQLAlchemy + PostgreSQL 16 | standardowy ORM, baza latwa do przeniesienia do Azure |
+| Hasla | Argon2 (`argon2-cffi`) | w bazie trzymamy wylacznie hasz hasla |
+| Uruchomienie | Docker Compose (app + db) | jedno polecenie stawia cale srodowisko DEV |
 
 ## 4. Model danych
 
-`users` (konta, rola, licznik nieudanych logowan, blokada czasowa) -
-`user_sessions` (skrot tokenu sesji, IP, user agent, czas zycia, uniewaznienie) -
-`threads` (watki) - `posts` (wpisy w watkach) - `audit_log` (zdarzenia bezpieczenstwa).
+Trzy tabele:
 
-## 5. Elementy bezpieczenstwa wdrozone juz na L1
+- `users` - `id`, `username` (unikalny), `password_hash`, `created_at`
+- `threads` - `id`, `title`, `author_id`, `created_at`
+- `posts` - `id`, `thread_id`, `author_id`, `body`, `created_at`
 
-- Hasla skladowane jako hasz Argon2id, minimum 10 znakow, odrzucanie hasel popularnych.
-- Sesje po stronie serwera: w ciasteczku tylko losowy token (256 bitow), w bazie jego SHA-256;
-  limit bezczynnosci 30 min, bezwzgledny czas zycia 12 h, rotacja tokenu CSRF po zalogowaniu.
-- Ochrona CSRF (double-submit cookie) na wszystkich formularzach zmieniajacych stan.
-- Blokada konta po 5 nieudanych probach logowania + limit tempa `/login` na nginx (5 req/min/IP).
-- Jednolity komunikat bledu logowania i stale opoznienie (weryfikacja haszu "na pusto") -
-  brak enumeracji uzytkownikow.
-- Naglowki: CSP, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
-  `Permissions-Policy`, HSTS (po wlaczeniu TLS).
-- Log audytowy zdarzen (rejestracja, logowanie udane/nieudane, wylogowanie, uniewaznienie sesji)
-  i log dostepowy z `X-Request-ID`.
-- Kontener: uzytkownik nieuprzywilejowany (UID 10001), system plikow `read-only`,
-  `cap_drop: ALL`, `no-new-privileges`, baza bez portu wystawionego na hosta.
+Pierwszy wpis w watku powstaje razem z watkiem, kolejne to odpowiedzi.
 
-## 6. Przygotowanie do kolejnych laboratoriow
+## 5. Endpointy
 
-Aplikacja jest bezstanowa (sesje w bazie), konfigurowana wylacznie zmiennymi
-srodowiskowymi i wystawia probe'y `/healthz` oraz `/readyz`, dzieki czemu
-przeniesienie na Azure (L4) sprowadza sie do zbudowania infrastruktury - bez zmian
-w kodzie. Szczegoly: `docs/architektura.md`, `docs/roadmap.md`, `infra/azure/README.md`.
+| Metoda | Sciezka | Dostep | Opis |
+| --- | --- | --- | --- |
+| GET | `/` | publiczny | lista watkow |
+| GET | `/threads/{id}` | publiczny | watek z wpisami |
+| GET/POST | `/register` | publiczny | rejestracja |
+| GET/POST | `/login` | publiczny | logowanie |
+| POST | `/logout` | zalogowany | wylogowanie |
+| GET/POST | `/threads/new` | zalogowany | nowy watek |
+| POST | `/threads/{id}/posts` | zalogowany | odpowiedz w watku |
+| GET | `/healthz` | infrastruktura | sprawdzenie, czy aplikacja zyje |
 
-## 7. Uruchomienie srodowiska DEV
+## 6. Stan na koniec L1
+
+Aplikacja dziala lokalnie w Dockerze (`docker compose up`), ma dane demonstracyjne
+i 10 testow pokrywajacych logowanie oraz obsluge watkow. Z rzeczy "bezpieczenstwowych"
+sa tylko te wynikajace wprost z wymagania logowania: hasz hasla zamiast hasla jawnego
+i sesja w ciasteczku `HttpOnly`. Reszta (naglowki, CSRF, WAF, monitoring, hardening)
+jest swiadomie zostawiona na laboratoria L6-L8, zeby bylo widac roznice przed i po.
+
+## 7. Uruchomienie
 
 ```bash
 cp .env.example .env
 docker compose up --build -d
-docker compose exec app python -m scripts.seed_demo_data   # dane do prezentacji
-# aplikacja: http://localhost:43117
+docker compose exec app python -m scripts.seed_demo_data
+# http://localhost:43117, konta demo: anna / bartek / celina, haslo: laboratorium
 ```

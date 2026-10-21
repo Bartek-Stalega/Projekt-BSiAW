@@ -15,7 +15,7 @@
 
 <section class="posts">
   {% for post in thread.posts %}
-    <article class="post" {% if loop.last %}id="ostatni"{% endif %}>
+    <article class="post">
       <header class="post-head">
         <span class="avatar">{{ post.author.username[0]|upper }}</span>
         <div>
@@ -30,10 +30,9 @@
 
 {% if current_user %}
   <form class="card" method="post" action="/threads/{{ thread.id }}/posts">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label for="body">Twoja odpowiedz</label>
     <textarea id="body" name="body" rows="4" maxlength="2000" required
-              placeholder="Napisz, co o tym sadzisz...">{{ form.body if form else "" }}</textarea>
+              placeholder="Napisz, co o tym sadzisz..."></textarea>
     <button class="btn btn-primary" type="submit">Dodaj odpowiedz</button>
   </form>
 {% else %}

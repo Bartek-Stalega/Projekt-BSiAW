@@ -1,47 +1,34 @@
 # Infrastruktura Azure (L3-L4)
 
-Katalog zarezerwowany na kod infrastruktury (Bicep / Terraform). Na etapie **L1**
-jest tu wylacznie projekt docelowy - zasoby powstana na laboratorium L3 (projekt)
-i L4 (implementacja). Aplikacja jest juz przygotowana tak, aby przeniesienie
-nie wymagalo zmian w kodzie.
+Katalog na kod infrastruktury (Bicep lub Terraform). Na etapie L1 sa tu tylko
+notatki - zasoby powstana na L3 (projekt) i L4 (implementacja).
 
-## Mapowanie: lokalny Docker -> Azure
+## Mapowanie lokalnego srodowiska na Azure
 
-| Element lokalny (`docker-compose.yml`) | Odpowiednik w Azure | Uwagi |
-| --- | --- | --- |
-| `proxy` (nginx, port 43117) | Application Gateway v2 + WAF | terminacja TLS, reguly OWASP CRS (L7) |
-| `app` (uvicorn, 1-N kontenerow) | Azure Container Apps | skalowanie HTTP, probe `/healthz` i `/readyz` |
-| `db` (postgres:16-alpine) | Azure Database for PostgreSQL Flexible Server | Private Endpoint, backupy, replika do odczytu |
-| zmienne w `.env` | App Settings + Key Vault | sekrety przez referencje do Key Vault |
-| obraz budowany lokalnie | Azure Container Registry | tag = `Build.BuildId` z pipeline'u |
-| logi na stdout | Log Analytics / Application Insights | korelacja po naglowku `X-Request-ID` |
-| brak | Azure DNS + managed certificate | domena `bsiaw-gr4.<domena>.pl`, cert poza serwerem aplikacyjnym |
+| Lokalnie (`docker-compose.yml`) | Azure |
+| --- | --- |
+| kontener `app` | Azure Container Apps (obraz z Azure Container Registry) |
+| kontener `db` | Azure Database for PostgreSQL Flexible Server |
+| port 43117 na hoscie | Application Gateway + Azure DNS (domena, certyfikat TLS) |
+| zmienne z `.env` | App Settings, sekrety w Key Vault |
+| logi na stdout | Log Analytics / Application Insights |
 
-## Co w aplikacji jest juz "cloud ready"
+## Co w aplikacji jest juz przygotowane
 
-- **Brak stanu w procesie aplikacji** - sesje leza w bazie (tabela `user_sessions`),
-  wiec load balancer nie potrzebuje sticky sessions, a skalowanie do N instancji
-  nie wylogowuje uzytkownikow.
-- **Konfiguracja wylacznie ze zmiennych srodowiskowych** (prefiks `APP_`) -
-  ten sam obraz dziala lokalnie i w chmurze, bez przebudowy.
-- **Dedykowane probe'y** `/healthz` (liveness, nie dotyka bazy) i `/readyz`
-  (readiness, sprawdza polaczenie z baza).
-- **Obsluga naglowkow proxy** (`X-Forwarded-For`, `X-Forwarded-Proto`) - realne IP
-  klienta trafia do logow audytowych takze zza Application Gateway.
-- **`APP_COOKIE_SECURE=true`** wlacza `Secure` na ciasteczkach i naglowek HSTS -
-  jedyna zmiana potrzebna po wpieciu TLS na warstwie brzegowej.
+- konfiguracja wylacznie ze zmiennych srodowiskowych (`APP_SECRET_KEY`, `APP_DATABASE_URL`,
+  `APP_COOKIE_SECURE`) - bez zmian w kodzie przy przenoszeniu,
+- sesja w podpisanym ciasteczku zamiast w pamieci procesu - mozna uruchomic wiele
+  instancji za load balancerem,
+- endpoint `/healthz` pod health probe,
+- `APP_COOKIE_SECURE=true` wlacza flage `Secure` na ciasteczku po wpieciu TLS.
 
 ## Planowane pliki
 
 ```
 infra/azure/
-├── main.bicep              # grupa zasobow, sieci, zaleznosci (L4)
-├── modules/
-│   ├── network.bicep       # VNet, subnety, NSG, Private Endpoint
-│   ├── database.bicep      # PostgreSQL Flexible Server
-│   ├── container-app.bicep # Container Apps Environment + aplikacja
-│   └── gateway.bicep       # Application Gateway + WAF + certyfikat
-└── parameters/
-    ├── dev.bicepparam
-    └── prod.bicepparam
+├── main.bicep          # grupa zasobow i powiazania
+└── modules/
+    ├── database.bicep      # PostgreSQL Flexible Server
+    ├── container-app.bicep  # Container Apps
+    └── gateway.bicep        # Application Gateway + certyfikat
 ```

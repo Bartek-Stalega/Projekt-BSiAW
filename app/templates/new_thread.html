@@ -7,14 +7,13 @@
 <section class="card">
   <h1>Nowy watek</h1>
   <form method="post" action="/threads/new">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <label for="title">Tytul</label>
     <input id="title" name="title" type="text" required minlength="5" maxlength="120"
-           placeholder="O czym chcesz podyskutowac?" value="{{ form.title if form else '' }}">
+           placeholder="O czym chcesz podyskutowac?" value="{{ title or '' }}">
 
     <label for="body">Pierwszy wpis</label>
     <textarea id="body" name="body" rows="6" required minlength="5" maxlength="2000"
-              placeholder="Opisz temat watku...">{{ form.body if form else '' }}</textarea>
+              placeholder="Opisz temat watku...">{{ body or '' }}</textarea>
 
     <button class="btn btn-primary" type="submit">Opublikuj watek</button>
   </form>

@@ -1,60 +1,33 @@
-"""Wypelnia baze danymi demonstracyjnymi (do prezentacji na laboratorium).
+"""Dodaje dane demonstracyjne (konta i watki) do pustej bazy.
 
-Uruchomienie lokalnie:        python -m scripts.seed_demo_data
-Uruchomienie w kontenerze:    docker compose exec app python -m scripts.seed_demo_data
-
-Skrypt jest idempotentny - przy ponownym uruchomieniu nic nie duplikuje.
+Lokalnie:      python -m scripts.seed_demo_data
+W kontenerze:  docker compose exec app python -m scripts.seed_demo_data
 """
 
-from sqlalchemy import func, select
+from argon2 import PasswordHasher
+from sqlalchemy import select
 
-from app.database import SessionLocal, init_db
+from app.db import SessionLocal, init_db
 from app.models import Post, Thread, User
-from app.security import hash_password
 
-DEMO_PASSWORD = "Laboratorium-2026"
+DEMO_PASSWORD = "laboratorium"
 
-DEMO_USERS = [
-    ("anna", "anna@example.com"),
-    ("bartek", "bartek@example.com"),
-    ("celina", "celina@example.com"),
-]
-
-DEMO_THREADS = [
+THREADS = [
     (
         "anna",
         "Podzial zadan na laboratorium L2",
         [
-            ("anna", "Proponuje: ja biore logowanie i sesje, Bartek forum, Celina docker compose."),
-            ("bartek", "Pasuje. Dorzuce jeszcze walidacje formularzy i testy."),
-            ("celina", "Ok, przygotuje tez sprawozdanie i schemat architektury."),
+            ("anna", "Proponuje: ja biore logowanie, Bartek forum, Celina docker compose."),
+            ("bartek", "Pasuje. Dorzuce jeszcze walidacje formularzy."),
+            ("celina", "Ok, przygotuje sprawozdanie i schemat architektury."),
         ],
     ),
     (
         "bartek",
-        "Czy sesje trzymamy w bazie czy w ciasteczku?",
+        "Jaka baze wybieramy?",
         [
-            (
-                "bartek",
-                "W ciasteczku bylby tylko podpisany token, ale wtedy trudno uniewaznic sesje.",
-            ),
-            (
-                "anna",
-                "Dlatego zrobilam sesje po stronie serwera - w ciasteczku jest losowy "
-                "identyfikator, a w bazie jego skrot. Dzieki temu mozna wylogowac "
-                "pojedyncze urzadzenie.",
-            ),
-        ],
-    ),
-    (
-        "celina",
-        "Pomysly na elementy bezpieczenstwa do L7",
-        [
-            (
-                "celina",
-                "Naglowki CSP i HSTS mamy juz w aplikacji, do tego WAF na warstwie brzegowej.",
-            ),
-            ("bartek", "Dodalbym jeszcze limit prob logowania i monitoring aktywnych sesji."),
+            ("bartek", "PostgreSQL w kontenerze, bo pozniej latwo przejdziemy na usluge w Azure."),
+            ("anna", "Zgoda, lokalnie i tak wszystko stawiamy przez docker compose."),
         ],
     ),
 ]
@@ -62,23 +35,21 @@ DEMO_THREADS = [
 
 def main() -> None:
     init_db()
+    hasher = PasswordHasher()
+
     with SessionLocal() as db:
-        if db.scalar(select(func.count(Thread.id))):
-            print("Baza zawiera juz watki - pomijam seedowanie.")
+        if db.scalar(select(Thread)):
+            print("Baza zawiera juz watki - pomijam.")
             return
 
-        users: dict[str, User] = {}
-        for username, email in DEMO_USERS:
-            user = db.scalar(select(User).where(User.username == username))
-            if user is None:
-                user = User(
-                    username=username, email=email, password_hash=hash_password(DEMO_PASSWORD)
-                )
-                db.add(user)
-                db.flush()
-            users[username] = user
+        users = {}
+        for name in ("anna", "bartek", "celina"):
+            user = User(username=name, password_hash=hasher.hash(DEMO_PASSWORD))
+            db.add(user)
+            db.flush()
+            users[name] = user
 
-        for author, title, posts in DEMO_THREADS:
+        for author, title, posts in THREADS:
             thread = Thread(title=title, author_id=users[author].id)
             db.add(thread)
             db.flush()
@@ -87,8 +58,7 @@ def main() -> None:
 
         db.commit()
 
-    print("Dodano uzytkownikow demo:", ", ".join(name for name, _ in DEMO_USERS))
-    print("Haslo dla kazdego konta:", DEMO_PASSWORD)
+    print("Konta demo: anna, bartek, celina (haslo:", DEMO_PASSWORD + ")")
 
 
 if __name__ == "__main__":
