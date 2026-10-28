@@ -2,12 +2,20 @@
 {% block title %}{{ thread.title }} &middot; {{ app_name }}{% endblock %}
 
 {% block content %}
-<nav class="breadcrumb"><a href="/">&larr; Wszystkie watki</a></nav>
+<nav class="breadcrumb">
+  <a href="/">&larr; Wszystkie watki</a>
+  {% if current_user and current_user.is_admin %}
+    <form method="post" action="/threads/{{ thread.id }}/delete" class="inline-form"
+          onsubmit="return confirm('Usunac caly watek?');">
+      <button type="submit" class="btn btn-small btn-danger">Usun watek</button>
+    </form>
+  {% endif %}
+</nav>
 
-<article class="card">
+<article class="panel">
   <h1>{{ thread.title }}</h1>
   <p class="thread-meta">
-    <span>zalozyl: {{ thread.author.username }}</span>
+    <span>zalozyl: {{ thread.author.username }}{% if thread.author.is_admin %} <span class="badge-admin">admin</span>{% endif %}</span>
     <span aria-hidden="true">&middot;</span>
     <span>{{ thread.created_at|dt }}</span>
   </p>
@@ -20,23 +28,37 @@
         <span class="avatar">{{ post.author.username[0]|upper }}</span>
         <div>
           <strong>{{ post.author.username }}</strong>
+          {% if post.author.is_admin %}<span class="badge-admin">admin</span>{% endif %}
           <span class="muted small">{{ post.created_at|dt }}</span>
         </div>
+        {% if current_user and current_user.is_admin %}
+        <div class="post-actions">
+          <form method="post" action="/posts/{{ post.id }}/delete" class="inline-form"
+                onsubmit="return confirm('Usunac ten wpis?');">
+            <button type="submit" class="btn btn-small btn-danger">Usun</button>
+          </form>
+        </div>
+        {% endif %}
       </header>
-      <p class="post-body">{{ post.body }}</p>
+      <div class="post-body md-body">{{ post.body | md }}</div>
+      {% if post.image_path %}
+        <p class="post-image"><img src="/uploads/{{ post.image_path }}" alt="zalacznik"></p>
+      {% endif %}
     </article>
   {% endfor %}
 </section>
 
 {% if current_user %}
-  <form class="card" method="post" action="/threads/{{ thread.id }}/posts">
-    <label for="body">Twoja odpowiedz</label>
-    <textarea id="body" name="body" rows="4" maxlength="2000" required
-              placeholder="Napisz, co o tym sadzisz..."></textarea>
+  <form class="panel" method="post" action="/threads/{{ thread.id }}/posts"
+        data-composer-root data-composer-height="300px">
+    <h2>Twoja odpowiedz</h2>
+    <div data-toast-editor></div>
+    <textarea name="body" data-composer class="composer-sync" maxlength="8000"
+              placeholder="Napisz odpowiedz..."></textarea>
     <button class="btn btn-primary" type="submit">Dodaj odpowiedz</button>
   </form>
 {% else %}
-  <div class="card center">
+  <div class="panel center">
     <p class="muted">Aby odpowiedziec w watku, musisz byc zalogowany.</p>
     <a class="btn btn-primary" href="/login">Zaloguj sie</a>
   </div>

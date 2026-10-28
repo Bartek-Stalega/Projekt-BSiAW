@@ -13,6 +13,9 @@ def current_user(request: Request, db: DbDep) -> User | None:
     """Uzytkownik z sesji (w ciasteczku jest tylko podpisane ``user_id``)."""
     user_id = request.session.get("user_id")
     user = db.get(User, user_id) if user_id else None
+    if user is not None and not user.is_active:
+        request.session.clear()
+        user = None
     request.state.user = user
     return user
 
@@ -27,3 +30,12 @@ def require_login(user: UserDep) -> User:
 
 
 LoggedInDep = Annotated[User, Depends(require_login)]
+
+
+def require_admin(user: LoggedInDep) -> User:
+    if not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Wymagane konto administratora.")
+    return user
+
+
+AdminDep = Annotated[User, Depends(require_admin)]

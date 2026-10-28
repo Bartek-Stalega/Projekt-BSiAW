@@ -4,7 +4,8 @@ from pathlib import Path
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
 
-from app.config import APP_NAME, ENVIRONMENT
+from app.config import APP_NAME, AUTHORS, ENVIRONMENT, GROUP_LABEL, TAGLINE
+from app.markdown_render import render_markdown
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -15,11 +16,15 @@ def _format_datetime(value: datetime | None) -> str:
 
 
 templates.env.filters["dt"] = _format_datetime
+templates.env.filters["md"] = render_markdown
 
 
 def render(request: Request, template: str, status_code: int = 200, **context):
     payload = {
         "app_name": APP_NAME,
+        "tagline": TAGLINE,
+        "group_label": GROUP_LABEL,
+        "authors": AUTHORS,
         "environment": ENVIRONMENT,
         "current_user": getattr(request.state, "user", None),
         # Komunikat jednorazowy przekazywany po przekierowaniu.

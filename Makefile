@@ -32,3 +32,6 @@ logs: ## Podglad logow aplikacji
 
 seed: ## Dodaje dane demonstracyjne
 	docker compose exec app python -m scripts.seed_demo_data
+
+seed-force: ## Nadpisuje dane demonstracyjne
+	docker compose exec app python -m scripts.seed_demo_data --force

@@ -5,22 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ app_name }}{% endblock %}</title>
   <link rel="stylesheet" href="/static/style.css">
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
+  <link rel="icon" href="/static/favicon.png" type="image/png">
 </head>
 <body>
   <header class="topbar">
     <div class="wrap topbar-inner">
       <a class="brand" href="/">
-        <span class="brand-mark">SF</span>
+        <img class="brand-logo" src="/static/logo.png" width="56" height="56" alt="Folium">
         <span>
           <strong>{{ app_name }}</strong>
-          <small>forum grupy projektowej</small>
+          <small>{{ tagline }}</small>
         </span>
       </a>
       <nav class="nav">
         {% if current_user %}
           <a href="/threads/new" class="btn btn-primary">Nowy watek</a>
-          <span class="nav-user">{{ current_user.username }}</span>
+          {% if current_user.is_admin %}
+            <a href="/admin" class="btn">Panel admina</a>
+          {% endif %}
+          <span class="nav-user">
+            {{ current_user.username }}
+            {% if current_user.is_admin %}<span class="badge-admin">admin</span>{% endif %}
+          </span>
           <form method="post" action="/logout" class="inline-form">
             <button type="submit" class="btn btn-ghost">Wyloguj</button>
           </form>
@@ -39,8 +46,11 @@
   </main>
 
   <footer class="wrap footer">
-    <span>{{ app_name }} &middot; srodowisko: {{ environment }}</span>
-    <span>Projekt laboratoryjny BSiAW, grupa 4</span>
+    <div>
+      <div>{{ app_name }} &middot; {{ group_label }} &middot; srodowisko: {{ environment }}</div>
+      <div class="footer-authors">{{ authors | join(" · ") }}</div>
+    </div>
   </footer>
+  <script src="/static/composer.js" defer></script>
 </body>
 </html>

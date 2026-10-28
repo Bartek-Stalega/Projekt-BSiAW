@@ -1,60 +1,45 @@
-# SecForum
+# Folium
 
-Proste forum dyskusyjne - projekt na laboratoria **Bezpieczenstwo serwerow i aplikacji
-Web** (grupa 4). Watki czyta kazdy, pisze tylko zalogowany uzytkownik.
+Forum (projekt BSiAW, grupa 1). Watki czyta kazdy, pisze zalogowany uzytkownik.
 
-To etap **L1**: wybor aplikacji i podstawowa implementacja. Elementy bezpieczenstwa
-i infrastruktura chmurowa dochodza w kolejnych laboratoriach (patrz
-[`docs/roadmap.md`](docs/roadmap.md)).
+Autorzy: Bartosz Stalga, Julia Aranowska, Dominik Baryla, Julek Jarzembowski.
 
-- **Stos:** Python 3.12, FastAPI, Jinja2, SQLAlchemy, PostgreSQL 16, Docker Compose
-- **Docelowa chmura:** Azure + Azure DevOps (od L3)
-- **Dokumentacja:** [sprawozdanie L1](docs/L1-sprawozdanie.md),
-  [architektura](docs/architektura.md), [plan L1-L9](docs/roadmap.md)
+- **Stos:** Python 3.12, FastAPI, Jinja2, SQLAlchemy, PostgreSQL 16, Docker Compose, Mailhog
+- **Architektura:** [`docs/architektura.md`](docs/architektura.md)
 
-## Uruchomienie w Dockerze
+## Uruchomienie (Docker)
 
 ```bash
 cp .env.example .env
 docker compose up --build -d
-docker compose exec app python -m scripts.seed_demo_data   # opcjonalnie: dane demo
+docker compose exec app python -m scripts.seed_demo_data --force
 ```
 
-Aplikacja: <http://localhost:43117>
-Konta demo: `anna`, `bartek`, `celina` - haslo `laboratorium`.
+- Aplikacja: http://localhost:43117
+- Mailhog: http://localhost:8025
+- Konta demo (haslo `laboratorium`): `admin`, `bartek`, `julek`, `julia`, `dominik`
 
-Zatrzymanie: `docker compose down` (z `-v` kasuje takze dane bazy).
+Zatrzymanie: `docker compose down` (`-v` kasuje dane).
 
-## Uruchomienie bez Dockera (SQLite)
+## Bez Dockera (SQLite)
 
 ```bash
 make install
-make run      # http://127.0.0.1:43117
+make run
 ```
 
 ## Funkcje
 
-- rejestracja i logowanie (sesja w podpisanym ciasteczku `HttpOnly`)
-- lista watkow, zakladanie watku, odpowiedzi w watku
-- dane w bazie PostgreSQL (lokalnie mozna tez na SQLite)
+- rejestracja / logowanie (sesja HttpOnly, Argon2)
+- watki i odpowiedzi, edytor WYSIWYG + obrazki
+- admin (`/admin`), kasowanie tresci, blokada kont
+- reset hasla e-mailem (Mailhog w DEV)
 
 ## Komendy
 
 | Komenda | Opis |
 | --- | --- |
-| `make up` / `make down` | start / stop srodowiska Docker |
-| `make logs` | logi aplikacji |
-| `make seed` | dane demonstracyjne |
-| `make test` | testy (pytest) |
-| `make lint` | styl kodu (ruff) |
-
-## Struktura
-
-```
-app/            aplikacja: modele, routery, szablony, style
-scripts/        skrypt z danymi demo
-tests/          testy
-docs/           sprawozdanie i dokumentacja projektowa
-infra/azure/    notatki o docelowej infrastrukturze (L3-L4)
-pipelines/      szkielet pipeline'u Azure DevOps (L5)
-```
+| `make up` / `make down` | Docker start / stop |
+| `make seed-force` | dane demo |
+| `make test` | pytest |
+| `make lint` | ruff |

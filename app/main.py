@@ -12,15 +12,18 @@ from app.config import (
     SECRET_KEY,
     SESSION_COOKIE,
     SESSION_MAX_AGE_SECONDS,
+    UPLOAD_DIR,
 )
 from app.db import init_db
-from app.routers import auth, forum
+from app.routers import admin, auth, forum
 from app.templating import BASE_DIR, render
+from app.uploads import ensure_upload_dir
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    ensure_upload_dir()
     yield
 
 
@@ -38,8 +41,11 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+ensure_upload_dir()
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 app.include_router(auth.router)
 app.include_router(forum.router)
+app.include_router(admin.router)
 
 
 @app.get("/healthz", include_in_schema=False)

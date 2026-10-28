@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from tests.conftest import register_and_login
 
 
@@ -24,12 +26,59 @@ def test_login_with_wrong_password_fails(client):
 
 def test_duplicate_username_is_rejected(client):
     register_and_login(client)
-    response = client.post("/register", data={"username": "student", "password": "haslo-testowe"})
+    response = client.post(
+        "/register",
+        data={
+            "username": "student",
+            "email": "inny@test.local",
+            "password": "haslo-testowe",
+        },
+    )
     assert response.status_code == 400
     assert "zajeta" in response.text
 
 
 def test_short_password_is_rejected(client):
-    response = client.post("/register", data={"username": "nowy", "password": "krotkie"})
+    response = client.post(
+        "/register",
+        data={"username": "nowy", "email": "nowy@test.local", "password": "krotkie"},
+    )
     assert response.status_code == 400
     assert "co najmniej" in response.text
+
+
+def test_password_reset_flow(client):
+    register_and_login(client, username="resetme", email="resetme@test.local")
+    client.post("/logout")
+
+    with patch("app.routers.auth.send_password_reset") as mocked:
+        resp = client.post(
+            "/forgot-password",
+            data={"email": "resetme@test.local"},
+            follow_redirects=False,
+        )
+        assert resp.status_code == 303
+        mocked.assert_called_once()
+        raw_token = mocked.call_args.args[1]
+
+    page = client.get(f"/reset-password?token={raw_token}")
+    assert page.status_code == 200
+    assert "Nowe haslo" in page.text or "nowe haslo" in page.text.lower()
+
+    assert (
+        client.post(
+            "/reset-password",
+            data={"token": raw_token, "password": "nowe-haslo-123"},
+            follow_redirects=False,
+        ).status_code
+        == 303
+    )
+
+    assert (
+        client.post(
+            "/login",
+            data={"username": "resetme", "password": "nowe-haslo-123"},
+            follow_redirects=False,
+        ).status_code
+        == 303
+    )

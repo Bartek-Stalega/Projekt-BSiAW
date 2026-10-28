@@ -19,3 +19,17 @@ data/
 .idea/
 .DS_Store
 uploads/
+
+# lokalne artefakty / AI / edytory
+.cursor/
+graphify-out/
+*.canvas.tsx
+*.canvas.data.json
+agent-transcripts/
+
+# poza zakresem runtime (sprawozdania / IaC / CI szkielety)
+docs/L1-sprawozdanie.md
+docs/L2-sprawozdanie.md
+docs/roadmap.md
+infra/
+pipelines/

@@ -7,3 +7,5 @@ psycopg[binary]==3.3.6
 argon2-cffi==25.1.0
 itsdangerous==2.2.0
 python-multipart==0.0.32
+markdown==3.7
+bleach==6.2.0

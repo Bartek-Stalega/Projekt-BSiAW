@@ -1,7 +1,7 @@
 [project]
 name = "secforum"
 version = "0.1.0"
-description = "Forum grupy projektowej - projekt laboratoryjny BSiAW (grupa 4)"
+description = "Folium - forum teorii spiskowych, projekt laboratoryjny BSiAW (grupa 1)"
 requires-python = ">=3.12"
 
 [tool.ruff]

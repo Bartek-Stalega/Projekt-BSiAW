@@ -4,8 +4,8 @@
 {% block content %}
 <section class="page-head">
   <div>
-    <h1>Watki na forum</h1>
-    <p class="muted">Zadaj pytanie grupie albo odpowiedz na watek, ktory juz ktos zaczal.</p>
+    <h1>Watki</h1>
+    <p class="muted">Teorie, dowody i pytania, o ktorych sie nie mowi.</p>
   </div>
   {% if current_user %}
     <a class="btn btn-primary" href="/threads/new">Zaloz watek</a>
@@ -13,26 +13,43 @@
 </section>
 
 {% if threads %}
-  <ul class="thread-list">
-    {% for thread in threads %}
-      <li class="thread-item">
-        <a class="thread-title" href="/threads/{{ thread.id }}">{{ thread.title }}</a>
-        <p class="thread-meta">
-          <span>{{ thread.author.username }}</span>
-          <span aria-hidden="true">&middot;</span>
-          <span>{{ thread.created_at|dt }}</span>
-          <span aria-hidden="true">&middot;</span>
-          <span>{{ thread.posts|length }} {% if thread.posts|length == 1 %}wpis{% else %}wpisow{% endif %}</span>
-        </p>
-      </li>
-    {% endfor %}
-  </ul>
+  <div class="board">
+    <div class="board-head" aria-hidden="true">
+      <span>Temat</span>
+      <span style="text-align:center">Wpisy</span>
+      <span>Ostatni</span>
+    </div>
+    <ul class="thread-list">
+      {% for thread in threads %}
+        {% set last = thread.posts[-1] if thread.posts else none %}
+        <li class="thread-item">
+          <div class="thread-main">
+            <a class="thread-title" href="/threads/{{ thread.id }}">{{ thread.title }}</a>
+            <p class="thread-meta">
+              <span>{{ thread.author.username }}</span>
+              <span aria-hidden="true">&middot;</span>
+              <span>{{ thread.created_at|dt }}</span>
+            </p>
+          </div>
+          <div class="thread-replies">{{ thread.posts|length }}</div>
+          <div class="thread-last">
+            {% if last %}
+              <strong>{{ last.author.username }}</strong><br>
+              {{ last.created_at|dt }}
+            {% else %}
+              —
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
 {% else %}
   <div class="empty">
     <h2>Forum jest jeszcze puste</h2>
     <p class="muted">
       {% if current_user %}
-        Zaloz pierwszy watek i zacznij dyskusje.
+        Zaloz pierwszy watek.
       {% else %}
         Zaloguj sie lub zaloz konto, aby dodac pierwszy watek.
       {% endif %}

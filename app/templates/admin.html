@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Admin &middot; {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Panel administratora</h1>
+  </div>
+</section>
+
+<div class="board">
+  <div class="board-head admin-head" aria-hidden="true">
+    <span>Uzytkownik</span>
+    <span>E-mail</span>
+    <span>Status</span>
+    <span>Akcje</span>
+  </div>
+  <ul class="thread-list">
+    {% for u in users %}
+      <li class="thread-item admin-row">
+        <div>
+          <strong>{{ u.username }}</strong>
+          {% if u.is_admin %}<span class="badge-admin">admin</span>{% endif %}
+        </div>
+        <div class="thread-last">{{ u.email }}</div>
+        <div class="thread-replies">{% if u.is_active %}aktywny{% else %}zablokowany{% endif %}</div>
+        <div class="admin-actions">
+          {% if u.id != current_user.id %}
+          <form method="post" action="/admin/users/{{ u.id }}/toggle-active" class="inline-form">
+            <button type="submit" class="btn btn-small">
+              {% if u.is_active %}Zablokuj{% else %}Odblokuj{% endif %}
+            </button>
+          </form>
+          <form method="post" action="/admin/users/{{ u.id }}/toggle-admin" class="inline-form">
+            <button type="submit" class="btn btn-small">
+              {% if u.is_admin %}Odbierz admina{% else %}Nadaj admina{% endif %}
+            </button>
+          </form>
+          {% else %}
+          <span class="muted small">to Ty</span>
+          {% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
